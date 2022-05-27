@@ -1,22 +1,22 @@
 # gocache-discovery-ingress-plugin
 API Discovery plugin for ingress
 
-# Envoriment variables neeeded
+## Envoriment variables neeeded
 
-## GOCACHE_DISCOVERY_TOKEN
+### GOCACHE_DISCOVERY_TOKEN
 
-Authentication token, you cna get it from GoCache support chat or in the api discovery section in the panel
+Authentication token, you can get it from GoCache support chat or in the api discovery section in the panel
 
-## GOCACHE_DISCOVERY_ADDERESS 
+### GOCACHE_DISCOVERY_ADDERESS 
 
 IP Adderess where is located the service, currently (beta): "129.159.62.11"
 
-## GOCACHE_DISCOVERY_HOSTNAME (optional)
+### GOCACHE_DISCOVERY_HOSTNAME (optional)
 
 Default to api-inventory.gocache.com.br
-# Installation
+## Installation
 
-## Using helm
+### Using helm
 
 You need to add an `extraInitContainers` directive to your helm config:
 ```yaml
@@ -118,7 +118,7 @@ OR
 helm upgrade ingress-nginx -f values.yaml ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
-## Using baremetal containers
+### Using baremetal containers
 
 inside your deploy.yaml that usually are provided by ingress itself, there is a section for `Deployment`. In that section you must create the volumes, set some envoriment variables and add an `initContainer` for the plugin code itself.
 
@@ -178,14 +178,14 @@ spec:
         emptyDir: {}
 ```
 
-## Config map method
+### Config map method
 
 There is an alternative method for installing the plugin using the config map instead of the git-sync method.
 To make it simple, follow the previous steps but remove all the section from `initContainer` or `extraInitContainers`
 
 Then you need to adjust the volumes accordingly
 
-### HELM volumes
+#### HELM volumes
 
 ```yaml
 extraVolumes:
@@ -197,9 +197,10 @@ extraVolumes:
     mountPath: /etc/nginx/lua/plugins/gocache/
 ```
 
-### Baremetal volumes
+#### Baremetal volumes
 
 ```yaml
+...
 	volumeMounts:
     - name: gocache-plugin
       mountPath: /etc/nginx/lua/plugins/gocache/
@@ -209,7 +210,7 @@ volumes:
   name: gocache-plugin
 ```
 
-### Config map itself
+#### Config map itself
 
 Now, you can create an file called `gocache-plugin.yaml` and add the following in it:
 ```yaml
