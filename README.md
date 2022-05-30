@@ -1,5 +1,5 @@
-# gocache-discovery-ingress-plugin
-API Discovery plugin for ingress
+# Gocache Api Discovery plugin
+THis plugin mirros the traffic but without copying actual data but its schema.
 
 ## Envoriment variables neeeded
 
@@ -7,13 +7,25 @@ API Discovery plugin for ingress
 
 Authentication token, you can get it from GoCache support chat or in the api discovery section in the panel
 
+### GOCACHE_DISCOVERY_MAX_REQUESTS_STORED (optional)
+
+Maximum amount of requests that would be stored to be sent at once in a single request. Increasing this number can delay the discovery process in a few minutes depending on the request rate, but it helps reducing the outgoing requests to the discovery, as it will condense in a single one.
+*Default*: 50
+
+### GOCACHE_DISCOVERY_REQUEST_RETENTION_SECONDS (optional)
+
+If by any reason, the requests never reach the maximum define at `GOCACHE_DISCOVERY_MAX_REQUESTS_STORED`, the remaining requests can be sent after a certain time.
+*Default*: 60
+
 ### GOCACHE_DISCOVERY_ADDERESS 
 
-IP Adderess where is located the service, currently (beta): "129.159.62.11"
+IP Adderess where is located the service, currently (beta).
+*Default*: "129.159.62.11"
 
 ### GOCACHE_DISCOVERY_HOSTNAME (optional)
 
-Default to api-inventory.gocache.com.br
+*Default*: "api-inventory.gocache.com.br"
+
 ## Installation
 
 ### Using helm

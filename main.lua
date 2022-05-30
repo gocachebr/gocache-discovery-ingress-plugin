@@ -11,6 +11,18 @@ end
 
 local discovery_adderess  = os.getenv("GOCACHE_DISCOVERY_ADDERESS")
 
+
+local max_requests_store  = os.getenv("GOCACHE_DISCOVERY_MAX_REQUESTS_STORED")
+if not tonumber(max_requests_store) then 
+   max_requests_store = 50
+end
+
+local requests_retention_seconds  = os.getenv("GOCACHE_DISCOVERY_REQUEST_RETENTION_SECONDS")
+if not tonumber(requests_retention_seconds) then 
+   requests_retention_seconds = 60
+end
+
+
 if not discovery_adderess or discovery_adderess == "" then 
    discovery_adderess = "0.0.0.0"
 end
@@ -96,7 +108,9 @@ local ignore_headers = {
 
 local _M = {}
 
-local function send_api_discovery_request(premature, request_info, token)
+_M._VERSION = 0.1
+
+local function send_api_discovery_request(premature, request_info, token, version)
    if premature then
        return
    end
@@ -123,7 +137,8 @@ local function send_api_discovery_request(premature, request_info, token)
        body = cjson.encode(request_info),
        headers = {
            ["Content-Type"] = "application/json",
-           ["GoCache-Inventory-Toke"] = token,
+           ["GoCache-Inventory-Token"] = token,
+           ["GoCache-Inventory-Version"] = version,
        }
    })
 
@@ -273,11 +288,11 @@ function _M.log()
       local last_sent = gcshared:get("last_sent")
       last_sent = tonumber(last_sent) or 0
 
-      if last_sent <= ngx.now() or gcshared:llen("requests") >= 50 then 
+      if last_sent <= ngx.now() or gcshared:llen("requests") >= max_requests_store then 
          
-         gcshared:set("last_sent", ngx.now()+60)
+         gcshared:set("last_sent", ngx.now()+requests_retention_seconds)
          local content = {}
-         for i=1, 50 do 
+         for i=1, max_requests_store do 
             local req_info = gcshared:rpop("requests")
             if req_info then 
                local req_data = cjson.decode(req_info)
@@ -285,7 +300,7 @@ function _M.log()
             end
          end
          if #content > 0 then 
-            ngx.timer.at(1, send_api_discovery_request, content, token)
+            ngx.timer.at(1, send_api_discovery_request, content, token, _M._VERSION)
          end
       end
    end
