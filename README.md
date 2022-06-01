@@ -17,10 +17,10 @@ Maximum amount of requests that would be stored to be sent at once in a single r
 If by any reason, the requests never reach the maximum define at `GOCACHE_DISCOVERY_MAX_REQUESTS_STORED`, the remaining requests can be sent after a certain time.
 *Default*: 60
 
-### GOCACHE_DISCOVERY_ADDERESS 
+### GOCACHE_DISCOVERY_DNS_NAMESERVERS (optional)
 
-IP Adderess where is located the service, currently (beta).
-*Default*: "129.159.62.11"
+Set default resolver DNS for the discovery telemetry service. Usually there is no need to change it, this section is here just to resolve the GOCACHE_DISCOVERY_HOSTNAME.
+*Default*: "8.8.8.8, 8.8.8.9"
 
 ### GOCACHE_DISCOVERY_HOSTNAME (optional)
 

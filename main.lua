@@ -1,5 +1,6 @@
 local cjson = require("cjson")
 local http = require("resty.http")
+local resolver = require ("resty.dns.resolver")
 local ngx = ngx
 
 local token = os.getenv("GOCACHE_DISCOVERY_TOKEN")
@@ -8,9 +9,6 @@ local discovery_host  = os.getenv("GOCACHE_DISCOVERY_HOSTNAME")
 if not discovery_host or discovery_host == "" then 
    discovery_host = "api-inventory.gocache.com.br"
 end
-
-local discovery_adderess  = os.getenv("GOCACHE_DISCOVERY_ADDERESS")
-
 
 local max_requests_store  = os.getenv("GOCACHE_DISCOVERY_MAX_REQUESTS_STORED")
 if not tonumber(max_requests_store) then 
@@ -22,9 +20,9 @@ if not tonumber(requests_retention_seconds) then
    requests_retention_seconds = 60
 end
 
-
-if not discovery_adderess or discovery_adderess == "" then 
-   discovery_adderess = "0.0.0.0"
+local resolver_nameservers  = os.getenv("GOCACHE_DISCOVERY_DNS_NAMESERVERS")
+if not resolver_nameservers or resolver_nameservers == "" then 
+   resolver_nameservers = "8.8.8.8, 8.8.8.9"
 end
 
 local gcshared = ngx.shared.gocache
@@ -110,11 +108,43 @@ local _M = {}
 
 _M._VERSION = 0.1
 
-local function send_api_discovery_request(premature, request_info, token, version)
+local function send_api_discovery_request(premature, request_info, token, version, nameservers)
    if premature then
        return
    end
 
+   
+   local r, err = resolver:new{
+       nameservers = nameservers,
+       retrans = 5,
+       timeout = 2000,
+       no_random = true,
+   }  
+
+   local answers, err, tries = r:query(discovery_host, nil, {})
+   if not answers then
+      ngx.log(ngx.ERR,"Error while resolving DNS for " .. cjson.encode(discovery_host) .. " : " .. err)
+      return
+   end
+
+
+   if answers.errcode then
+      ngx.log(ngx.ERR,"Error while resolving DNS for " .. cjson.encode(discovery_host) .. " : " ..  answers.errcode..' - '..answers.errstr)
+      return
+   end
+   local discovery_adderess = nil
+   for i, ans in ipairs(answers) do
+      if ans.type == 1 then 
+         discovery_adderess = ans.address
+         break
+      end
+   end 
+
+   if not discovery_adderess then 
+      ngx.log(ngx.ERR,"Error while resolving DNS for " .. cjson.encode(discovery_host) .. " : No ip address returned")
+      return
+   end
+   
    local httpc = http.new()
 
    local ok,err = httpc:connect(discovery_adderess, 443)
@@ -149,7 +179,7 @@ local function send_api_discovery_request(premature, request_info, token, versio
        return
    end   
 
-   ngx.log(ngx.INFO, "Status code from sending "..(#request_info).." requests for discovery: "..res.status)                  
+   ngx.log(ngx.ERR, "Status code from sending "..(#request_info).." requests for discovery: "..res.status)                  
 end
 
 local function collect_cookie(collector, content)
@@ -215,6 +245,11 @@ local function obfuscate_parameters(params)
    check_type["boolean"] = function()
        return false
    end
+
+   check_type["userdata"] = function()
+       return nil
+   end
+
    check_type["number"] = function()
        return 0
    end
@@ -300,7 +335,12 @@ function _M.log()
             end
          end
          if #content > 0 then 
-            ngx.timer.at(1, send_api_discovery_request, content, token, _M._VERSION)
+            local nameservers = {}
+            for ip in (resolver_nameservers..','):gmatch("(.-),") do 
+               local ns = ip:match("%s*([0-9%.]+)%s*") 
+               nameservers[#nameservers+1] = ns
+            end
+            ngx.timer.at(1, send_api_discovery_request, content, token, _M._VERSION, nameservers)
          end
       end
    end
