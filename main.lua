@@ -132,32 +132,32 @@ local function send_api_discovery_request(premature, request_info, token, versio
       ngx.log(ngx.ERR,"Error while resolving DNS for " .. cjson.encode(discovery_host) .. " : " ..  answers.errcode..' - '..answers.errstr)
       return
    end
-   local discovery_adderess = nil
+   local discovery_addresses = nil
    for i, ans in ipairs(answers) do
       if ans.type == 1 then 
-         discovery_adderess = ans.address
+         discovery_addresses = ans.address
          break
       end
    end 
 
-   if not discovery_adderess then 
+   if not discovery_addresses then 
       ngx.log(ngx.ERR,"Error while resolving DNS for " .. cjson.encode(discovery_host) .. " : No ip address returned")
       return
    end
    
    local httpc = http.new()
 
-   local ok,err = httpc:connect(discovery_adderess, 443)
+   local ok,err = httpc:connect(discovery_addresses, 443)
    if not ok then
        err = err or ""
-       ngx.log(ngx.ERR,"Error while connecting to api_inventory for " .. cjson.encode(discovery_adderess) .. " : " .. err)
+       ngx.log(ngx.ERR,"Error while connecting to api_inventory for " .. cjson.encode(discovery_addresses) .. " : " .. err)
        return
    end
 
    local ok, err = httpc:ssl_handshake(nil, discovery_host,false)
    if not ok then
        err = err or ""
-       ngx.log(ngx.ERR,"Error while doing ssl handshake to api_inventory for " .. cjson.encode(discovery_adderess) .. " -> "..cjson.encode(discovery_host).." : " .. err)
+       ngx.log(ngx.ERR,"Error while doing ssl handshake to api_inventory for " .. cjson.encode(discovery_addresses) .. " -> "..cjson.encode(discovery_host).." : " .. err)
        return
    end
 
@@ -175,7 +175,7 @@ local function send_api_discovery_request(premature, request_info, token, versio
    httpc:close()
    if not res then
        err = err or ""
-       ngx.log(ngx.ERR,"Error while sending request to api_inventory for " .. cjson.encode(discovery_adderess) .. " -> "..cjson.encode(discovery_host) .. " : " .. err)
+       ngx.log(ngx.ERR,"Error while sending request to api_inventory for " .. cjson.encode(discovery_addresses) .. " -> "..cjson.encode(discovery_host) .. " : " .. err)
        return
    end   
 
@@ -211,13 +211,7 @@ local function obfuscate_headers(params)
    local final_headers = {}
    for key, content in pairs(params) do 
       if not ignore_headers[key] then
-         if type(content) == 'table' then 
-            for __, ___ in pairs(content) do 
-               final_headers[key] = ""
-            end
-         else 
-            final_headers[key] = ""
-         end
+         final_headers[key] = ""
       end
    end
    return final_headers
@@ -268,6 +262,7 @@ function _M.log()
       for _, ct in ipairs(accepted_response_content_types) do
          if res_content_type:match(ct) then
             add = true 
+            break
          end
       end
    end
@@ -320,12 +315,12 @@ function _M.log()
 
       gcshared:lpush("requests", cjson.encode(request_info))
 
-      local last_sent = gcshared:get("last_sent")
-      last_sent = tonumber(last_sent) or 0
+      local next_sent = gcshared:get("next_sent")
+      next_sent = tonumber(next_sent) or 0
 
-      if last_sent <= ngx.now() or gcshared:llen("requests") >= max_requests_store then 
+      if next_sent <= ngx.now() or gcshared:llen("requests") >= max_requests_store then 
          
-         gcshared:set("last_sent", ngx.now()+requests_retention_seconds)
+         gcshared:set("next_sent", ngx.now()+requests_retention_seconds)
          local content = {}
          for i=1, max_requests_store do 
             local req_info = gcshared:rpop("requests")

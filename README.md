@@ -1,11 +1,11 @@
-# Gocache Api Discovery plugin
-THis plugin mirros the traffic but without copying actual data but its schema.
+# GoCache Api Discovery plugin
+This plugin mirrors the traffic without copying actual data, only the schema.
 
-## Envoriment variables neeeded
+## Environment variables needed
 
 ### GOCACHE_DISCOVERY_TOKEN
 
-Authentication token, you can get it from GoCache support chat or in the api discovery section in the panel
+Authentication token, you can get it from GoCache support chat or in the api discovery section of the panel
 
 ### GOCACHE_DISCOVERY_MAX_REQUESTS_STORED (optional)
 
@@ -54,7 +54,7 @@ extraInitContainers:
       value: "1"
 ```
 
-Then mount the volumes for the plugin:
+Then, mount the volumes for the plugin:
 ```yaml
   extraVolumes:
   - name: lua-plugins
@@ -73,14 +73,15 @@ Add another section for the envs:
   - name: GOCACHE_DISCOVERY_HOSTNAME
   	value: api-inventory.gocache.com.br
 ```
-And finally enable the plugin:
+And finally, enable the plugin:
+
 ```yaml
 config:
     plugins: gocache
     lua-shared-dicts: "gocache: 30M"
 ```
 
-Here's the full controller lets say you named it `values.yaml`:
+Here's the full controller, let's say you named it `values.yaml`:
 ```yaml
 controller:
   extraEnvs:
@@ -125,14 +126,14 @@ Once done, you can apply it:
 ```bash
 helm install --version 4.1.2 ingress-nginx ingress-nginx/ingress-nginx -n ingress-nginx -f values.yaml
 ```
-OR
+Or:
 ```bash
 helm upgrade ingress-nginx -f values.yaml ingress-nginx/ingress-nginx -n ingress-nginx
 ```
 
 ### Using baremetal containers
 
-inside your deploy.yaml that usually are provided by ingress itself, there is a section for `Deployment`. In that section you must create the volumes, set some envoriment variables and add an `initContainer` for the plugin code itself.
+inside your deploy.yaml that usually are provided by ingress itself, there is a section for `Deployment`. In that section you must create the volumes, set some environment variables and add an `initContainer` for the plugin code itself.
 
 Here's all the fields needed:
 ```yaml
@@ -224,7 +225,7 @@ volumes:
 
 #### Config map itself
 
-Now, you can create an file called `gocache-plugin.yaml` and add the following in it:
+Now, you can create a file called `gocache-plugin.yaml` and add the following in it:
 ```yaml
 apiVersion: v1
 kind: ConfigMap
@@ -237,7 +238,7 @@ metadata:
 
 ```
 
-Note that is needed to copy the content of the main.lua to the section highlighted in the config map, otherwise you will get an error or empty config file. Another important thing is that you might need to change the namespace accordinly to whats been setup previously.
+Note that is needed to copy the content of the main.lua to the section highlighted in the config map, otherwise you will get an error or empty config file. Another important thing is that you might need to change the namespace accordingly to the setup previously.
 
 Once done, you can apply the config
 ```bash
