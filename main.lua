@@ -254,11 +254,12 @@ end
 
 function _M.log()
 
+   local request_time = ngx.now() - ngx.req.start_time()
    local response_headers = ngx.resp.get_headers()
    local res_content_type = response_headers["content_type"]
 
    local add = false
-   if tonumber(ngx.var.status) == 200 and res_content_type ~= nil then
+   if res_content_type ~= nil then
       for _, ct in ipairs(accepted_response_content_types) do
          if res_content_type:match(ct) then
             add = true 
@@ -311,6 +312,7 @@ function _M.log()
          body_data = body_info,
          header_data = obfuscate_headers(request_headers),
          cookie_data = cookie_data,
+         request_time = request_time,
       }
 
       gcshared:lpush("requests", cjson.encode(request_info))
