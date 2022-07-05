@@ -301,10 +301,19 @@ function _M.log()
       if cookies then 
          cookie_data = obfuscate_cookies(cookies)
       end
+
+      local uri = ngx.var.request_uri
+      local queryIndex = string.find(uri,"?")
+      local query
+      if queryIndex ~= nil then
+            query = string.sub(uri,queryIndex+1)
+            uri = string.sub(uri,1,queryIndex-1)
+      end
                
       local request_info = {
          hostname = ngx.var.http_host,
-         uri = ngx.var.request_uri,
+         uri = uri,
+         query_string = query,
          status = ngx.status,
          method = ngx.var.request_method,
          res_content_type = res_content_type,
